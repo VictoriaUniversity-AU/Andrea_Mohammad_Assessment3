@@ -1,11 +1,46 @@
 ---
 title: "Andrea - Assessment 3"
 author: "Andrea Botes"
-date: "`r Sys.Date()`"
+date: "04/06/2022"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(rtweet)
 ```
 
+## Data import
+
+Collect tweets about Traditional Marketing
+
+```{r}
+
+traditionalmarketing_tweets<-search_tweets(
+  q="traditionalmarketing",
+  n=50,
+  include_rts = FALSE,
+  lang="en",
+  retryonratelimit = TRUE
+)
+
+```
+
+Cleaner version:
+
+```{r}
+#look at first 10 obs
+traditionalmarketing_tweets%>%
+  head(10)
+
+#look at structure
+traditionalmarketing_tweets%>%
+  str()
+  
+traditionalmarketing_short<-traditionalmarketing_tweets %>%
+  select(user_id , screen_name , created_at , text , favorite_count, retweet_count, urls_expanded_url, hashtags, mentions_screen_name, location)
+
+traditionalmarketing_short%>%write_csv("traditionalmarketing_short_04_06_2022.csv")
+traditionalmarketing_tweets<-read_csv("traditionalmarketing_short_04_06_22.csv")
