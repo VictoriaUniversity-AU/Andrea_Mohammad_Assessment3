@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(rtweet)
+library(tidytext)
 ```
 
 ## Data import
@@ -18,10 +19,10 @@ Collect tweets about Traditional Marketing
 
 ```{r}
 
-traditionalmarketing_tweets<-search_tweets(
-  q="traditionalmarketing",
+luna_tweets<-search_tweets(
+  q="luna",
   n=50,
-  include_rts = FALSE,
+  include_rts = TRUE,
   lang="en",
   retryonratelimit = TRUE
 )
@@ -32,15 +33,15 @@ Cleaner version:
 
 ```{r}
 #look at first 10 obs
-traditionalmarketing_tweets%>%
+luna_tweets%>%
   head(10)
 
 #look at structure
-traditionalmarketing_tweets%>%
+luna_tweets%>%
   str()
   
-traditionalmarketing_short<-traditionalmarketing_tweets %>%
+luna_short<-luna_tweets %>%
   select(user_id , screen_name , created_at , text , favorite_count, retweet_count, urls_expanded_url, hashtags, mentions_screen_name, location)
 
-traditionalmarketing_short%>%write_csv("traditionalmarketing_short_04_06_2022.csv")
-traditionalmarketing_tweets<-read_csv("traditionalmarketing_short_04_06_22.csv")
+luna_short%>%write_csv("luna_short_04_06_2022.csv")
+luna_tweets<-read_csv("luna_short_04_06_22.csv")
