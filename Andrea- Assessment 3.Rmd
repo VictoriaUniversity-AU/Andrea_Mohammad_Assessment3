@@ -11,11 +11,13 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(rtweet)
 library(tidytext)
+library(dplyr)
+library(tidyr)
 ```
 
 ## Data import
 
-Collect tweets about Traditional Marketing
+Collect tweets about Luna
 
 ```{r}
 
@@ -45,3 +47,59 @@ luna_short<-luna_tweets %>%
 
 luna_short%>%write_csv("luna_short_04_06_2022.csv")
 luna_tweets<-read_csv("luna_short_04_06_22.csv")
+```
+
+# Part 3: Topic Modeling & visualisation
+  
+## Preprocess text from dataset to tidy text & convert to DocumenttermMatric
+
+### Clean up dataset text
+
+```{r}
+tidy_luna <- luna_short %>%
+  mutate(text) %>%
+  unnest_tokens(word , text) %>%
+  anti_join(get_stopwords()) %>%
+  filter(!is.na(word) & !grepl("[^A-Za-z]" , word) & word != "https" & word !="na")
+
+tidy_luna %>%
+  count(word , sort = TRUE)
+
+```
+
+
+```{r}
+head(tidy_luna$word)
+
+#remove stop words from list of words
+
+cleaned_tidy_luna <- tidy_luna %>%
+  anti_join(stop_words)
+head(cleaned_tidy_luna)
+
+head(tidy_luna$word)
+```
+
+# top 10 most commonly used words
+
+```{r}
+cleaned_tidy_luna %>%
+  count(word, sort = TRUE) %>%
+  top_n(10) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(x = word , y= n)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  theme_classic() +
+  labs(x = "Count" , 
+       y = "Unique words" , 
+       title = "Unique word counts found in #luna tweets")
+
+```
+
+Sentiment analysis
+
+```{r}
+
+```
