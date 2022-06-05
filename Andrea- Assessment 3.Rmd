@@ -152,57 +152,7 @@ bing_luna %>%
        x = NULL) +
   coord_flip() + theme_bw()
 ```
-```{r}
-sentiment_bing = function(twt){
-  
-  #Step 1; perform basic text cleaning (on tweet), as seen earlier
-  
-  twt_tbl = tibble(text = twt) %>%
-    mutate(
-      
-      #remove http elements manually
-      bing_luna = gsub("http\\s+" , "" , text)
-    ) %>%
-    unnest_tokens(word , bing_luna) %>%
-    anti_join(stop_words) %>% #remove stop words
-    inner_join(get_sentiments("bing")) %>% #merge with bing sentiment
-    count(word , sentiment , sort = TRUE) %>%
-    ungroup() %>%
-    
-    #create a column "score" , that assigns a -1 to all negative words and a 1 to positive words
-    
-    mutate(
-      score = case_when(
-        sentiment == 'negative'~n*(-1) , 
-        sentiment == 'positive'~n*1)
-      )
-  ## Calculate total score
-  
-  sent.score = case_when(
-    nrow(twt_tbl)==0~0 , #if therre are no words the score is 0
-    nrow(twt_tbl)>0~sum(twt_tbl$score) #otherwise, sum the positive and negatives
-  )
-  
-  ##This is to keep track of which tweets contained no words at all from the bing list
-  zero.type = case_when(
-    nrow(twt_tbl)==0~"Type 1", #type 1: no words at all, zero = no
-    nrow(twt_tbl)>0~"Type 2" #type 2: zero means sum of words = 0
-  )
-  list(score = sent.score , type = zero.type , twt_tbl = twt_tbl)
-}
-```
 
-Apply function to #luna dataset
-
-```{r}
-#The lapply function returns a list of all the sentiment scores, types, and tables of the tweets
-
-luna_sentiment = lapply(bing_luna$word, function(x){sentiment_bing(x)})
-luna_sentiment
-```
-```{r}
-
-```
 
 REFERENCES
 
