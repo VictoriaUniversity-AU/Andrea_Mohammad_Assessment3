@@ -45,8 +45,8 @@ luna_tweets%>%
 luna_short<-luna_tweets %>%
   select(user_id , screen_name , created_at , text , favorite_count, retweet_count, urls_expanded_url, hashtags, mentions_screen_name, location)
 
-luna_short%>%write_csv("luna_short_04_06_2022.csv")
-luna_tweets<-read_csv("luna_short_04_06_22.csv")
+luna_short%>%write_csv("luna_short_05_06_2022.csv")
+luna_tweets<-read_csv("luna_short_05_06_22.csv")
 ```
 
 # Part 3: Topic Modeling & visualisation
@@ -78,6 +78,7 @@ cleaned_tidy_luna <- tidy_luna %>%
 head(cleaned_tidy_luna)
 
 head(tidy_luna$word)
+
 ```
 
 # top 10 most commonly used words
@@ -94,7 +95,7 @@ cleaned_tidy_luna %>%
   theme_classic() +
   labs(x = "Count" , 
        y = "Unique words" , 
-       title = "Unique word counts found in #luna tweets")
+       title = "Unique word counts found in '#luna' Tweets")
 
 ```
 
@@ -127,7 +128,7 @@ get_sentiments("afinn") %>% filter(value=="-3")
 ```
 
 Sentiment on tweets
-## bing sentiment analysis
+## Bing sentiment analysis
 
 ```{r}
 bing_luna = cleaned_tidy_luna %>%
@@ -152,7 +153,7 @@ bing_luna %>%
   coord_flip() + theme_bw()
 ```
 ```{r}
-sentiment_bing = function(twt) {
+sentiment_bing = function(twt){
   
   #Step 1; perform basic text cleaning (on tweet), as seen earlier
   
@@ -160,9 +161,9 @@ sentiment_bing = function(twt) {
     mutate(
       
       #remove http elements manually
-      stripped_text = gsub("http\\s+" , "" , text)
+      bing_luna = gsub("http\\s+" , "" , text)
     ) %>%
-    unnest_tokens(word , stripped_text) %>%
+    unnest_tokens(word , bing_luna) %>%
     anti_join(stop_words) %>% #remove stop words
     inner_join(get_sentiments("bing")) %>% #merge with bing sentiment
     count(word , sentiment , sort = TRUE) %>%
@@ -196,8 +197,11 @@ Apply function to #luna dataset
 ```{r}
 #The lapply function returns a list of all the sentiment scores, types, and tables of the tweets
 
-luna_sentiment = lapply(luna_short$text, function(x){sentiment_bing(x)})
+luna_sentiment = lapply(bing_luna$word, function(x){sentiment_bing(x)})
 luna_sentiment
+```
+```{r}
+
 ```
 
 REFERENCES
