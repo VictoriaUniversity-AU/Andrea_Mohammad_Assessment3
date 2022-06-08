@@ -1,0 +1,323 @@
+---
+title: "BCO7007 AI&ML | Assessment3"
+author: "Andrea Botes and Mohammad Aziz"
+date: '2022-06-03'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(rtweet)
+library(tidyverse)
+library(tidytext)
+library(knitr)
+library(readr)
+library(tm)
+library(ggplot2)
+library(tidyr)
+library(tidymodels)
+```
+
+```{r}
+#retrieve tweets and retweets of Luna cryptocurrency.
+luna_tweets <- search_tweets(
+  q="luna",
+  n=20,
+  include_rts = TRUE,
+  lang="en",
+  retryonratelimit = TRUE
+)
+
+
+#covert the dataset to a short and tidy dataset for more useful exploration. 
+luna_short<-luna_tweets%>%
+  select(user_id, screen_name, created_at, text, favorite_count, quoted_location, is_retweet, retweet_count, favorite_count, hashtags, mentions_user_id, mentions_screen_name, quoted_followers_count)
+
+
+#write the retrieve data set in a csv format
+luna_short%>%write_csv("luna_short_08_06_2022.csv")
+
+```
+
+```{r}
+#read data set from csv and save it to a variable name (e.g. luna_tweets)
+luna_tweets <- read_csv("luna_short_08_06_2022.csv")
+
+#provide an overview of dataset with data types.
+glimpse(luna_tweets)
+```
+
+```{r}
+#apply "str()" function to display the internal structure of data set. 
+str(luna_tweets)
+
+#get head (first rows) of the data frame assign it to an object name (d1).
+d1 = head(luna_tweets)
+
+#display earlier saved object with "kable" in an "html" format for beter visibility.
+
+kable(d1, format = "html")
+
+```
+
+```{r}
+#plotting the frequency of the tweets for the current data set.
+ts_plot(luna_tweets, "hours") +
+  labs(x = NULL, y = NULL,
+       title = "Frequency of tweets with luna",
+       subtitle = paste0(format(min(luna_tweets$created_at), "%d %B %Y"), " to ", format(max(luna_tweets$created_at),"%d %B %Y")),
+       caption = "luna tweets Data collected from Twitter") +
+  theme_gray()
+```
+
+```{r}
+# below chunk of code identifies most retweeted tweets by filtering the retweets and then filter top 5 using 'head()' function. based on results [screen_name] 'crytosplant' with 95895 retweet_count reserve top of the list.
+luna_tweets%>%
+  select(screen_name, text, retweet_count, is_retweet)%>%
+  filter(is_retweet == TRUE)%>%
+  select(screen_name, retweet_count)%>%
+  arrange(desc(retweet_count))%>%
+  head(5)
+
+```
+
+
+```{r}
+#in the below chunk of code "tweeting locations" are retrieved. Based on results '♡I love you so much my Maru♡' which by suprize we couldn't location such a location in the map!
+luna_tweets%>%
+  select(quoted_location, is_retweet)%>%
+  filter(!is.na(quoted_location), quoted_location != "Ø", quoted_location != "", is_retweet == FALSE)%>%
+  count(quoted_location, sort = T)%>%
+  arrange(desc(n))%>%
+  head(5)
+```
+
+```{r}
+#get time series of tweeter name 'luna'
+lunatime <- get_timelines("luna", n= 3200)
+
+#see summary of tweets with 'luna' tweeter account from when it start till last tweet.
+
+lunatime %>%
+  summarise(min(created_at), max(created_at))
+
+#visualize the tweets by week time series.
+lunatime %>%
+  filter(created_at >= "2011-09-28") %>%
+  group_by(screen_name) %>%
+  ts_plot("weeks", trim = 1L) +
+  geom_point() +
+  geom_smooth(se = F, color = "cadetblue") +
+  scale_color_brewer() +
+  theme_light()+
+  ggplot2::theme(
+    legend.title = element_blank(),
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold")
+  ) +
+  labs(
+    x = NULL, y = NULL,
+    title = "Frequency of Twitter statuses",
+  )
+```
+
+```{r}
+library(glue)
+library(tidygeocoder)
+library(dplyr)
+library(maps)
+
+
+luna_places <- lunatime %>%
+  drop_na(place_name) %>%
+  select(place_name:bbox_coords) %>%
+  distinct() %>%
+  mutate(addr = glue::glue("{place_full_name}, {country}")) %>%
+  tidygeocoder::geocode(addr, method = "osm")
+```
+
+
+```{r}
+#devtools::install_github("hadley/emo")
+library(emo)
+luna_tweets %>%
+  mutate(emoji = ji_extract_all(text)) %>%
+  unnest(cols = c(emoji)) %>%
+  count(emoji, sort = TRUE) %>%
+  top_n(10)
+```
+
+```{r}
+#Top hashtaqs seem be "thread", "luna", "LUNA", "crypto"... in below chunk of code the "list" data type is first converted to character then desired outcome is retrived.
+
+luna_tweets %>% 
+  unnest_tokens(hashtag, text, "tweets", to_lower = FALSE) %>%
+  filter(str_detect(hashtag, "^#"),
+        hashtag != "#ClimateEmergency") %>%
+  count(hashtag, sort = TRUE) %>%
+  top_n(10)
+
+```
+
+
+
+```{r}
+
+luna_tweets$text <- gsub("\\|%&*#+_><@/","", luna_tweets$text)
+
+#above chunks of code clean up the data and avoid the noise that may affect modeling moving forward. change is to a structure format rather unstructured one.
+
+```
+
+```{r}
+tidy_luna <- luna_tweets %>%
+  mutate(text) %>%
+  unnest_tokens(word , text) %>%
+  anti_join(get_stopwords()) %>%
+  filter(!is.na(word) & !grepl("[^A-Za-z]" , word) & word != "https" & word !="na")
+
+tidy_luna %>%
+  count(word , sort = TRUE)
+```
+
+```{r}
+cleaned_tidy_luna <- tidy_luna %>%
+  anti_join(stop_words)
+```
+
+```{r}
+
+#create a column plot of 10 most used words.
+tidy_luna %>%
+  count(word, sort = TRUE) %>%
+  top_n(10) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(x = word , y= n)) +
+  geom_col() +
+  xlab(NULL) +
+  coord_flip() +
+  theme_classic() +
+  labs(x = "Count" , 
+       y = "Unique words" , 
+       title = "Unique word counts found in '#luna' Tweets")
+```
+
+```{r}
+library(tidytext)
+library(textdata)
+
+#get a vector of sentiments so to use for sentiment analysis. 
+get_sentiments(lexicon = c("bing", "afinn", "loughran", "nrc"))
+
+#apply and use "bing" sentiment out of different sentiments.
+bing_luna = tidy_luna %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup()
+
+#plot for positive or negative words used in "review" variable of the dataset and see top 20 words of each.
+bing_luna %>%
+  group_by(sentiment) %>%
+  top_n(10) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n, fill = sentiment)) + 
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(title = "Top 10 Most frequent Positive/Negative words", 
+       y = NULL, 
+       x = NULL) +
+  coord_flip() + theme_bw()
+```
+
+
+```{r}
+
+luna_corpus <- Corpus(VectorSource(tidy_luna))
+#create a Corpus of the luna_corpus or documents - Corpus is a database of words created here.
+
+luna_corpus <- tm_map(luna_corpus, content_transformer(tolower))
+luna_corpus <- tm_map(luna_corpus, removeNumbers)
+luna_corpus <- tm_map(luna_corpus, removePunctuation, preserve_intra_word_dashes = TRUE)
+
+
+```
+
+```{r}
+#load library
+library(RColorBrewer)
+
+#load library
+library(wordcloud)
+
+#wordcloud of the document is created to see what are the most repeated words.
+wordcloud(luna_corpus, min.freq=2, max.words = 50, random.order = F, colors = brewer.pal(8, "Dark2"))
+
+luna_corpus
+
+
+```
+
+```{r}
+#get a vector of sentiments so to use for sentiment analysis. 
+get_sentiments(lexicon = c("bing", "afinn", "loughran", "nrc"))
+
+#apply and use "bing" sentiment out of different sentiments.
+bing_wcc = tidy_wcc %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup()
+```
+
+
+```{r}
+
+# create a DTM of the data set to prepare it for modeling.
+dtm<-DocumentTermMatrix(luna_corpus)
+
+#remove the zero values that may generate glitch while running the code.
+raw.sum=apply(dtm,1,FUN=sum)
+dtm=dtm[raw.sum!=0,]
+
+#create random numbers
+set.seed(2022)
+
+#load library to use LDA
+library(topicmodels)
+
+#create LDA model of the data set.
+model_lda <- LDA(dtm, k=2, control = list(seed = 1234))
+model_lda
+
+#Tidy with beta matrix shows an over view of which word in which topic and 'beta' overview of the words in topics and topics' words.
+#extraxt beta of the LDA model
+beta_topic <- tidy(model_lda, matrix = "beta")
+beta_topic
+
+```
+
+
+```{r}
+
+#prepare data set for visualisation.
+beta_top_term <- beta_topic %>%
+  group_by(topic) %>%
+  slice_max(beta, n = 10) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+
+#visualisation of the topic.
+beta_top_term %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(beta, term, fill = factor(topic))) +
+  geom_col(show.legend = F) +
+  facet_wrap(~topic, scales = "free") + 
+  scale_y_reordered()
+
+
+```
