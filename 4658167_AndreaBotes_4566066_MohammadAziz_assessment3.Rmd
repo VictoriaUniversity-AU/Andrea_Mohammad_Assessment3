@@ -9,20 +9,23 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 ###Executive Summary
-This report revolves around the Luna coin; a crypto-currency coin that crashed in May 2022. The main objective of this business report is to conduct data mining of the keyword "luna" from social media tweeter using "rtweet" and in the subordination of other [R packages] explore the dataset, tidy it up, visualize it as well as to conduct sentiment analysis and develop an RMSE supervised model for prediction of how Luna coin affected investors and users.
+This report revolves around the Luna coin which is a crypto-currency coin that crashed in May of 2022. The main objective of this business report is to collect data by conducting data mining of the hashtag "luna" from Twitter which is a social media platform. By using "rtweet" and the subordination of other [R packages] we are able to explore the dataset, tidy or clean it, visualize the results, and finally conduct a sentiment analysis and develop an RMSE supervised model to predict how the Luna coin affected investors and users.
 
 ###Introduction
-This report aims to outline the reaction of users and investors of Luna coin over the huge market crash that according to [bloomberg](https://www.bloomberg.com/graphics/2022-crypto-luna-terra-stablecoin-explainer/) "$60 billion of in Terra Coins went up in Algorithmic smoke" and some $600 billion in value was wiped out in term of crypto market capitalization as reported in [the sun news online](https://www.thesun.co.uk/money/18551885/cryptocurrency-market-crash-bitcoin-ethereum-luna/). Luna coin is a cryptocurrency algorithmic coin that supposedly could be back its sister token UST where UST is meant to be traded 1:1 to fiat US$. "One UST can always be exchanged for a floating quantity of Luna with a market value of $1. Whenever either of them is exchanged, the currency is taken out of the circulation by the smart contracts programmed to maintain the system." (Shen Muyao, 2022)
+This report aims to outline the reaction of users and investors of the Luna coin after the massive market crash where, according to [bloomberg](https://www.bloomberg.com/graphics/2022-crypto-luna-terra-stablecoin-explainer/), "$60 billion of in Terra Coins went up in Algorithmic smoke" and some $600 billion in value was wiped out in terms of crypto market capitalization as reported in [the sun news online](https://www.thesun.co.uk/money/18551885/cryptocurrency-market-crash-bitcoin-ethereum-luna/). Luna coin is a crypto-currency algorithmic coin that could possibly be subsidised by its sister token, UST, as UST is meant to be traded at 1:1 to fiat US$. "One UST can always be exchanged for a floating quantity of Luna with a market value of $1. Whenever either of them is exchanged, the currency is taken out of the circulation by the smart contracts programmed to maintain the system." (Shen Muyao, 2022)
 
-Crypto currency market is extremely risky market for investors. Based on [Money Smart](https://moneysmart.gov.au/investment-warnings/cryptocurrencies) "price of crypto-assets can fluctuate at extreme levels based solely on market speculation. Factors that can influence the price of crypto include:
+The rypto currency market is an extremely high-risk market for investors. This statement is supported by [Money Smart](https://moneysmart.gov.au/investment-warnings/cryptocurrencies) who stated that the "price of crypto-assets can fluctuate at extreme levels based solely on market speculation. Factors that can influence the price of crypto include:
 
 - media focus
 - public announcements
 - the actions of individuals who hold large amounts of a crypto or who influence the price through social media"
 
-This report aims to conduct data mining on the keyword "luna" from social media giant tweeter using "rtweet" and in the subordination of other [R packages] explore the dataset, tidy it up, visualize it as well as to conduct sentiment analysis and develop an RMSE supervised model for prediction of how Luna coin affected investors and users. we first mined or collect the data, then do some analysis of the tweets, and visualize it (e.g. create wordcloud and graphs), subsequently, we conduct sentiment analysis of the tweets using the "bing" lexicon to see what positive and negative words are used, follow with LDA modelling and then conduct RSME supervised model on data. The body of the report will be an illustration and functionality of the codes.
+This report aims to collect data by conducting data mining on the hashtag "luna" from social media giant Twitter by using "rtweet" and the subordination of other [R packages] we are able to explore the dataset, tidy or clean it, visualize the results and finally, conduct a sentiment analysis and develop an RMSE supervised model to predict how the Luna coin affected investors and users. 
+
+The first step consisted of mining or collecting the data associated to the hashtag, after which we analysed the tweets withing the dataset, which in turn allowed us to visualise the data by creating wordcloud and graphs. After the inital collecting and cleaning of the data we could subsequently conduct a sentiment analysis of the tweets using the "bing" lexicon to determine what positive and negative words are used within the tweets made by users. This was followed with LDA modelling and applying a RSME supervised model on the data. The body of the report will provide an illustration and functionality of the codes used.
+
 ```{r}
-#Below lines of code load required libraries.
+#The lines of code below load the required libraries:
 library(rtweet)
 library(tidyverse)
 library(tidytext)
@@ -35,7 +38,7 @@ library(tidymodels)
 library(emo)
 library(textdata)
 
-#load  library to use the functions
+#These libraries were used to load the functions:
 library(recipes)
 library(rsample)
 library(parsnip)
@@ -48,9 +51,11 @@ library(stringr)
 library(xgboost)
 library(randomForest)
 ```
+
 #Note: Line 31 - 47 should not be runned as part of this report. It is for demonstration only!
+
 ```{r}
-#retrieve tweets and retweets of with keyword Luna.
+#Retrieving tweets and retweets containing the hashtag Luna.
 luna_tweets <- search_tweets(
   q="luna",
   n=20,
@@ -59,39 +64,39 @@ luna_tweets <- search_tweets(
   retryonratelimit = TRUE
 )
 
-#covert the dataset to a short and tidy dataset for more useful exploration. 
+#Coverting the dataset to a short and cleaned dataset for more useful exploration. 
 luna_short<-luna_tweets%>%
   select(user_id, screen_name, created_at, text, favorite_count, quoted_location, is_retweet, retweet_count, favorite_count, hashtags, mentions_user_id, mentions_screen_name, quoted_followers_count)
 
-#write the retrieve data set in a csv format
+#Writing the retrieved dataset in a csv format
 luna_short%>%write_csv("luna_short_08_06_2022.csv")
 ```
 
-#In the above chunks of codes (line 31 - 47) we have mined tweets and retweets with keyword 'luna' and assigned it to 'luna_tweets' object name, then out of 90 variables and ~15500 observations, only 13 variables that we are aiming to work on is select of the object name and re-assigned to 'luna_short' object name, finally, we write the dataset to a csv formated file 'luna_short_08_06_2022.csv' and save it to a directory; hence, on ward we will our saved data set.
+#The above chunks of codes (line 31 - 47) allowed us to mine the tweets and retweets containing the keyword 'luna' and assigning it to 'luna_tweets' as an object name. Out of the 90 variables and ~15500 observations, only 13 variables that were relevant to our work was selected from the object name and re-assigned to the 'luna_short' object name. We were then finally able to write the dataset to a csv formated file, namely 'luna_short_08_06_2022.csv', and save it to a directory which will henceforth be used as our saved data set.
 
 ```{r}
-#read data set from csv and save it to a variable name (e.g. luna_tweets)
+#Read data set from csv and saved it to a variable name (e.g. luna_tweets)
 luna_tweets <- read_csv("luna_short_08_06_2022.csv")
 
-#provide an overview of dataset with data types.
+#Provided an overview of the dataset with data types.
 glimpse(luna_tweets)
 ```
 
 ```{r}
-#apply "str()" function to display the internal structure of data set. 
+#Apply "str()" function to display the internal structure of data set. 
 str(luna_tweets)
 
-#get head (first rows) of the data frame assign it to an object name (d1).
+#Get head(first rows) of the data frame and assign it to an object name (d1).
 d1 = head(luna_tweets)
 
-#display earlier saved object with "kable" in an "html" format for beter visibility.
+#Display earlier saved object with "kable" in an "html" format for better visibility.
 
 kable(d1, format = "html")
 
 ```
 
 ```{r}
-#plotting the frequency of the tweets for the current data set.
+#Plotting the frequency of the tweets for the current data set.
 ts_plot(luna_tweets, "minutes", trim = 1L) +
   labs(x = NULL, y = NULL,
        title = "Frequency of tweets with luna",
@@ -108,10 +113,10 @@ ts_plot(luna_tweets, "minutes", trim = 1L) +
   )
 ```
 
-#Time series plot above shows how luna attracts tweeter users from ~16:00 June 07 2022, then the slop leans downward by ~ 21:00, and then there is an exponential growth in luna keyword users after 21:00.
+#Time series plot above indicates how luna attracts Twitter users from ~16:00 June 07 2022, then the slope leans downward by ~ 21:00, after which there is an exponential growth in luna hashtag users after 21:00.
 
 ```{r}
-#below chunk of code identifies most retweet counts by filtering the retweets and then filter top 5 using 'head()' function. based on results [screen_name] 'Luna_Selene9' with 252338 retweet_count reserve top of the list.
+#The chunk of code below identifies the most retweeted accounts by filtering the retweets and then filtering the top 5 using 'head()' function. Based on results [screen_name] 'Luna_Selene9' reserved the top of the list with 252338 retweet_count.
 luna_tweets%>%
   select(screen_name, text, retweet_count, is_retweet)%>%
   filter(is_retweet == TRUE)%>%
@@ -122,7 +127,7 @@ luna_tweets%>%
 ```
 
 ```{r}
-#in the below chunk of code "tweeting locations" are retrieved. Based on results '♡I love you so much my Maru♡' which by suprize we couldn't location such a location in the map!
+#In the chunk of code below the top "tweeting locations" are retrieved. Based on results '♡I love you so much my Maru♡' was identified as a location which, by suprise, we couldn't locate as a location on the map!
 luna_tweets%>%
   select(quoted_location, is_retweet)%>%
   filter(!is.na(quoted_location), quoted_location != "Ø", quoted_location != "", is_retweet == FALSE)%>%
@@ -132,10 +137,10 @@ luna_tweets%>%
 ```
 
 ```{r}
-#get time series of tweeter name 'luna' and assign it to 'lunatime' object.
+#Obtain time series of Twitter name 'luna' and assign it to 'lunatime' object.
 lunatime <- get_timelines("luna", n= 3200)
 
-#see summary of tweets with 'luna' tweeter account from when it start till last tweet.
+#See summary of tweets with 'luna' Twitter account from when it starts untill the last tweet.
 
 lunatime %>%
   summarise(min(created_at), max(created_at))
@@ -159,11 +164,11 @@ lunatime %>%
     title = "Frequency of Twitter statuses",
   )
 ```
-#Our analysis shows that users' privacy plays a vital role in data mining. For an instant,  we want to know when and how active "Dokwon" CEO and founder of UST or "cz_binance", COE and founder of Binance exchange and a large shareholder/co-founder of UST are, both users deny data mining on their accounts. Nevertheless, we have conducted a time series data mining on user name 'luna', which show the user is pretty between 2011 until 2012, then slowly die down, and, by late 2017 there is no sign of activity of the specific user name.
+#Our analysis shows that users' privacy plays a vital role in data mining. For instance,  we wanted to determine when and how active "Dokwon", the CEO and founder of UST, and "cz_binance", COE and founder of Binance exchange and a large shareholder/co-founder of UST, are but both users deny data mining to occur on their accounts. Instead, we conducted a time series data mining on  the user name 'luna', which indicates that the users are quite active between 2011 and 2012 but the activity slowly dies down, and, by late 2017 there is no sign of activity of the specific user name.
 
 ```{r}
 
-#below chunks of code extract emojis from 'text' variable of our data set, count use of every emoji and then filter top 10 most used ones. emoji 🔥 is most used one with 1162 count.
+#the below chunks of code extract emojis from the 'text' variable of our data set, counts the use of every emoji, and then filters the top 10 most used ones. The most used emoji '🔥' has a count of 1162.
 
 luna_tweets %>%
   mutate(emoji = ji_extract_all(text)) %>%
@@ -173,7 +178,7 @@ luna_tweets %>%
 ```
 
 ```{r}
-#In the below chunk of code we have extracted hashtags used in 'text' variable, then apply cound fucntion, sort them in descending order and display top 10 hashtaqs. It seems "Luna" in different typo "luna/LUNA/Luna" is most used one: around 3232 times in the data set.
+#In the below chunk of code we have extracted the most common hashtags that were used alongside #luna in the 'text' variable, then applied the coundtfunction, sorted them in descending order, and finally displayed the top 10 hashtaqs. It appears that "Luna" in the form of different typos such as "luna/LUNA/Luna" is the most used: around 3232 times within the data set.
 
 luna_tweets %>% 
   unnest_tokens(hashtag, text, "tweets", to_lower = FALSE) %>%
@@ -184,31 +189,32 @@ luna_tweets %>%
 
 ```
 
-##Hereafter we are going to tidy our data set further and prepare it for sentiment analysis, LDA modelling and developing a root mean square deviation model.
+##Hereafter we are going to tidy our dataset further and prepare it for the sentiment analysis, LDA modelling and developing a root mean square deviation model.
 
 ```{r}
-#line 178 to 182 yet tidy up our text further (e.g. filter out NA, remove "https"...)
+#Lines 196 to 204 are used to tidy up our text further (e.g. filter out NA, remove "https"...)
 tidy_luna <- luna_tweets %>%
   mutate(text) %>%
   unnest_tokens(word , text) %>%
   anti_join(get_stopwords()) %>%
   filter(!is.na(word) & !grepl("[^A-Za-z]" , word) & word != "https" & word !="na" & word != "trump" & word != "one")
 
-#word count of the variable "word" and sort Z - A on "n".
+#Word count of the variable "word" and sort Z - A on "n".
 tidy_luna %>%
   count(word, sort = TRUE)
 ```
 
 ```{r}
-#get dataset and apply anti_join on stop_words function and assign it to "clean_tidy_luna" for further work.
+#Get the dataset and apply anti_join on the stop_words function and assign it to "clean_tidy_luna" for further work.
 clean_tidy_luna <- tidy_luna %>%
   anti_join(stop_words)
 ```
-#in line 172 - 176 we mutate the 'text' variable and change each word to a single observation and then filter un-wanted word as well as remove NAs from the dataset then line 178 - 179 does a count of the word which sorts them Z - A on 'n', seem that 218757 observations drop to 178188 as we save/assign our dataset to 'clean_tidy_luna' object name.
-#we have purposefully removed words ("trump", "https" and "one") from our dataset as this may later on cause issues with sentiment analysis and wordcloud.
+#In lines 172 - 176 we mutated the 'text' variable and changed each word to a single observation after which we were able to filter un-wanted words out as well as remove NAs from the dataset. Lines 178 - 179 then does a count of the words which sorts them from Z - A based on 'n'. The 218757 observations decrease to 178188 as we save/assign our dataset to 'clean_tidy_luna' an an object name.
+
+#We purposefully removed words ("trump", "https" and "one") from our dataset as this may later on cause issues with in the sentiment analysis and wordcloud.
 ```{r}
 
-#create a column plot of 10 most used words on 'word' variable.
+#Create a column plot of 10 most used words on 'word' variable.
 clean_tidy_luna %>%
   count(word, sort = TRUE) %>%
   top_n(10) %>%
@@ -223,24 +229,25 @@ clean_tidy_luna %>%
        title = "Unique word counts found in '#luna' Tweets")
 ```
 
-#ploting top word count show [luna, lunc, crypto, blue, senior, running, america, advisor, eric, democratic, administration] which is slithy different to our word count order in line 179 - 180, [luna, lunc, now, help, crypto, keep, name, following, blue, senior] further investigation show that with "anti_join(word_stop)" function we further narrow down the dataset to 17129 observations.
+#Ploting the top word count shown [luna, lunc, crypto, blue, senior, running, america, advisor, eric, democratic, administration] is slightly different to our word count order in lines 179 - 180, [luna, lunc, now, help, crypto, keep, name, following, blue, senior]. Upon further investigation it clearly indicates that with the use of the "anti_join(word_stop)" function we are able to further narrow down the dataset to 17129 observations.
 
-#we have a clear view of our dataset: how it looks, what it is and what we want to do with it. now we are going to do a sentiment analysis of the dataset to see how Luna and other crypto investors and users have reacted to the market crash.
-#Sentiment analysis is based on built package and lexicons, different lexicons react to the dataset differently. we are going to use "bing" out of below popular lexicons or vocabulary of words (e.g. Bing, NRC and Afinn) for the report. According to [kaggle](https://www.kaggle.com/datasets/andradaolteanu/bing-nrc-afinn-lexicons) Bing: is a dictionary of words that segregate words into (positive or negative feelings) while NRC gives us an analysis of words based on (positive, negative, anger, anticipation, disgust, fear, joy, sadness, surprise, trust) and Afinn work differently to both NRC and Bing, which provide values (from -5 to +5, showing the intensity of the sentiment from negative to positive).
+#Now we have a clear view of our dataset: how it looks, what it is and what we want to do with it. We are now able to do a sentiment analysis of the dataset to see how Luna and other crypto investors and users have reacted to the market crash.
+
+#The sentiment analysis is based on already built package and lexicons - different lexicons react to the dataset in different ways. By using "bing" we can remove popular lexicons or vocabulary of words (e.g. Bing, NRC and Afinn) below for the report. According to [kaggle](https://www.kaggle.com/datasets/andradaolteanu/bing-nrc-afinn-lexicons), Bing is a dictionary of words that segregate words into positive or negative feelings. NRC gives us an analysis of the words based on (positive, negative, anger, anticipation, disgust, fear, joy, sadness, surprise, trust) and Afinn work differently to both NRC and Bing, which provide values (from -5 to +5, showing the intensity of the sentiment from negative to positive).
 
 ```{r}
 
-#get a vector of sentiments so to use for sentiment analysis. 
+#Get a vector of sentiments so to use for sentiment analysis. 
 get_sentiments("bing")
 
 
-#apply and use "bing" sentiment out of different sentiments.
+#Apply and use "bing" sentiment out of different types sentiments.
 bing_luna = clean_tidy_luna %>%
   inner_join(get_sentiments("bing")) %>%
   count(word, sentiment, sort = TRUE) %>%
   ungroup()
 
-#plot for positive or negative words used in "review" variable of the dataset and see top 20 words of each.
+#Plot the positive or negative words used in "review" variable of the dataset and see top 20 words of each.
 bing_luna %>%
   group_by(sentiment) %>%
   top_n(10) %>%
@@ -255,12 +262,13 @@ bing_luna %>%
   coord_flip() + theme_bw()
 ```
 
-#a wordcloud is another great way to see the most used words in a book, topic or number of topics in a glance. below word cloud show 20 most used words in our dataset.
+#A wordcloud is another great way to see the most used words in a book, topic or number of topics at a glance. Below word cloud shows the 20 most used words in our dataset.
+
 ```{r}
-#create a Corpus of the 'clean_tidy_luna' object we already created - Corpus is a database of words created here.
+#Create a Corpus of the 'clean_tidy_luna' object we already created - Corpus is a database of words created here.
 luna_corpus <- Corpus(VectorSource(clean_tidy_luna))
 
-#line 245 - 249 clean up the data further (e.g. numbers, punctuations, whitespaces)
+#Lines 245 - 249 clean up the data further (e.g. numbers, punctuations, whitespaces)
 luna_corpus <- tm_map(luna_corpus, content_transformer(tolower))
 luna_corpus <- tm_map(luna_corpus, removeNumbers)
 luna_corpus <- tm_map(luna_corpus, removePunctuation, preserve_intra_word_dashes = FALSE)
@@ -269,39 +277,39 @@ luna_corpus <-  tm_map(luna_corpus, stripWhitespace)
 
 
 
-#load library
+#Load library
 library(RColorBrewer)
 
-#load library
+#Load library
 library(wordcloud)
 
-#wordcloud of the document is created to see what are the most repeated words.
+#Wordcloud of the document is created to see what the most repeated words are.
 wordcloud(luna_corpus, min.freq=2, max.words = 50, random.order = F, colors = brewer.pal(8, "Dark2"))
 
 ```
 
-#According to [rstudio pubs](https://rstudio-pubs-static.s3.amazonaws.com/35817_2552e05f1d4e4db8ba87b334101a43da.html) "Linear discriminant analysis (LDA) and the related Fisher’s linear discriminant are methods used in statistics, pattern recognition and machine learning to find a linear combination of features which characterizes or separates two or more classes of objects or events" for the purpose report in hand here with LDA we distribute the word into as many topics as we would like and the analyse which word is most used on which topic. In a different approach, we can get many topics and then analyse the words used within a different topic.
+#According to [rstudio pubs](https://rstudio-pubs-static.s3.amazonaws.com/35817_2552e05f1d4e4db8ba87b334101a43da.html) "Linear discriminant analysis (LDA) and the related Fisher’s linear discriminant are methods used in statistics, pattern recognition and machine learning to find a linear combination of features which characterizes or separates two or more classes of objects or events". For the purpose of this report, with the use of LDA we can distribute the words into as many topics as we like and then analyse which word is most used in different topics. An alternative approach: we can get many topics and then analyse the words used within a different topic.
 
 ```{r}
 
-# create a DTM matrix of the data set to prepare it for modeling.
+#Create a DTM matrix of the data set to prepare it for modeling.
 dtm<-DocumentTermMatrix(luna_corpus)
 
-#remove the zero values that may generate glitch while running the code.
+#Remove the zero values that may generate glitch while running the code.
 raw.sum=apply(dtm,1,FUN=sum)
 dtm=dtm[raw.sum!=0,]
 
-#create random numbers
+#Create random numbers
 set.seed(2022)
 
-#load library to use LDA
+#Load library to use LDA
 library(topicmodels)
 
-#create LDA model of the data set. here we use 'k=2' just to create two topic or a two dimension topic.
+#Create LDA model of the data set. here we use 'k=2' just to create two topic or a two dimension topic.
 model_lda <- LDA(dtm, k=2, control = list(seed = 1234))
 model_lda
 
-#Tidy with beta matrix shows an over view of which word in which topic and 'beta' overview of the words in topics and topics' words, and show them as which word is used in which topic. we can also conduct and alpha matrix as we which.
+#Tidy with beta matrix shows an over view of which word in which topic and 'beta' overview of the words in topics and topics' words, and show them as which word is used in which topic. We can also conduct and alpha matrix as we which.
 #extraxt beta of the LDA model
 beta_topic <- tidy(model_lda, matrix = "beta")
 beta_topic
@@ -311,7 +319,7 @@ beta_topic
 
 ```{r}
 
-#prepare data set for visualization.
+#Prepare data set for visualization.
 beta_top_term <- beta_topic %>%
   group_by(topic) %>%
   slice_max(beta, n = 10) %>%
@@ -319,7 +327,7 @@ beta_top_term <- beta_topic %>%
   arrange(topic, -beta)
 
 
-#visualisation of the topic.
+#Visualisation of the topic.
 beta_top_term %>%
   mutate(term = reorder_within(term, beta, topic)) %>%
   ggplot(aes(beta, term, fill = factor(topic))) +
@@ -327,15 +335,15 @@ beta_top_term %>%
   facet_wrap(~topic, scales = "free") + 
   scale_y_reordered()
 
-#words are randomly selected and assign to different topic. green and red here unlike of sentiment analysis does not represent positivity or negativity.
+#words are randomly selected and assigned to different topics. Green and red here, unlike the sentiment analysis, does not represent positivity or negativity.
 ```
 
 
 ```{r}
 
-#for the purpose of modeling we will only use "favorite_count,is_retweet, retweet_count" and want to predict if retweet and number of retweets affect number of tweet likes or not. For the purpose of the assignment we are going to use "xg_boost" modeling.
+#For the purpose of modeling, we will only use "favorite_count,is_retweet, retweet_count" as we want to predict if retweets and the number of retweets affect the number of tweet likes or not. For this assignment we are going to use "xg_boost" modeling.
 
-#line 320 to 327 fitch dataset we read and saved in line 55, select a number of required variables, mutate 'is_retweet' to binary numbers and save it to object name "luna_rec" which further we will use it for modeling recipe and moving forward.
+#Lines 320 to 327 fetch the dataset that we read and saved in line 55, select a number of required variables, mutate 'is_retweet' to binary numbers and save it to the object name "luna_rec" which will then be further used for the modeling recipe and moving forward.
 
 luna_rec <- luna_tweets %>%
   select(user_id, favorite_count,is_retweet, retweet_count) %>%
@@ -348,17 +356,17 @@ luna_rec <- luna_tweets %>%
 ```
 
 ```{r}
-#call random numbers
+#Call random numbers
 set.seed(2022)
 
-#split the dataset to two different portions (e.g. 70 percent for training and 30 percent for testing) and randomly select observation for the split.
+#Split the dataset to two different portions (e.g. 70 percent for training and 30 percent for testing) and randomly select observation for the split.
 
 data_split <- sample(2, nrow(luna_tweets), replace = T, prob = c(0.70, 0.30))
 
-#allocate the first split the 'data_split' to training and call it 'train'.
+#Allocate the first split the 'data_split' to training and call it 'train'.
 train <- luna_tweets[data_split == 1,]
 
-#allocate the second split the 'data_split' to testing and call it 'test'.
+#Allocate the second split the 'data_split' to testing and call it 'test'.
 test <- luna_tweets[data_split==2,]
 
 ```
@@ -367,19 +375,19 @@ test <- luna_tweets[data_split==2,]
 library("gbm")
 library(MASS)
 
-#boosted trees are commonly used regression. to create basic boosted tree model we use 'gbm'.
+#Boosted trees is a commonly used regression. In order to create the basic boosted tree model, we use 'gbm'.
 
 model = gbm(is_retweet ~ retweet_count + favorite_count, data = train)
 
 model
 
-#load library for ridyge regression use.
+#Load library for ridyge regression use.
 library(caret)
 
-#create random numbers
+#Create random numbers
 set.seed(2022)
 
-#train model
+#Train model
 model <- train(favorite_count ~ is_retweet + retweet_count,
   data = train,
   method = "gbm",
@@ -388,22 +396,22 @@ model <- train(favorite_count ~ is_retweet + retweet_count,
 
 model
 
-#plot model to see insights
+#Plot model to see insights
 plot(model)
 
-#save plot of model to object 'm1' for later use
+#Save plot of model to object 'm1' for later use
 m1 = plot(model)
 
-#random number generator
+#Random number generator
 set.seed(2022)
 
-#create a 10 fold sample using 'cv' method with train control
+#Create a 10 fold sample using 'cv' method with train control
 ctr <- trainControl(
   method = "cv",
   number = 10
 )
 
-#create the second model
+#Create the second model
 model2 <- train(
    retweet_count ~ favorite_count + is_retweet,
   data = train,
@@ -415,25 +423,25 @@ model2 <- train(
 
 model2
 
-#plot model
+#Plot model
 plot(model2)
 
-#save model plot to a variable name
+#Save model plot to a variable name
 m2 = plot(model2)
 ```
 
 ```{r}
-#plot the result of models and see if there is any different between models created.
+#Plot the results of the models and see if there is any different between the models created.
 library(ggpubr)
 ggarrange(m1, m2, ncol = 2, nrow = 1)
 ```
 ##Conclusion
 
-Our finding on this particular dataset indicates that the correlation between a tweet getting retweeted or if the number of retweets is very high does not necessarily represent the likelihood of tweets being liked by many real tweeter users, particularly crypto investors and Luna investor and users in our case.
+Our finding on this particular dataset indicates that the correlation between a tweet getting retweeted or whether the number of retweets is very high, does not necessarily represent the likelihood of tweets being liked by many real Twitter users, particularly crypto and Luna investors and users in our case.
 
-Based on lines 109-114 that show most of the top tweeter names that get retweeted and like are not real people's names, we can speculate that too many fake accounts and bots are involved in tweeter activity. When it comes to the crypto market, Particularly, in the event of the UST-Luna market crash bots' bots and fake accounts activity is much higher interms of retweeting, liking and commenting on tweets.
+Lines 109-114 indicates that most of the top Twitter names that get retweeted and liked are not real people's names, we can speculate that too many fake accounts and bots are involved in the tweet activity around the topic. When it comes to the crypto-currency market, particularly in the event of the UST-Luna market crash, bots and fake accounts' activity is much higher in terms of retweeting, liking and commenting on tweets.
 
-Cryptocurrency market is unregulated market. Risks of scamming and crash is very high likely compare to other trading markets. Investors must be very cautious of investing large capital. As cryptocurrency market hitting 3 trillion and number of investor growing, there is a need for governments to step in and introduce regulations.
+The crypto-currency market is an unregulated market which means that the risks of scamming and crashes are highly likely in comparison to other trading markets. Investors must be very cautious of investing large capital as the crypto-currency market hits 3 trillion and the number of investors grow as there is a need for governments to step in and introduce regulations.
 
 ##Reference:
 Shen, M 2022, How $60Billion in Terra Coins Went Up in Alghorithmic Smoke, Bloomberg, viewed 7 June 2022, <https://www.bloomberg.com/graphics/2022-crypto-luna-terra-stablecoin-explainer>.
